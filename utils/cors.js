@@ -1,9 +1,7 @@
 let whitelist;
 
-whitelist =
-    process.env.NODE_ENV !== "production"
-        ? ["http://localhost:3000"]
-        : ["https://school-app.com"];
+whitelist = ["http://localhost:3000"]
+// whitelist = 'http://188.166.217.10:3000'
 
 const corsOptions = {
     origin: function (origin, callback) {
