@@ -535,6 +535,30 @@ export const getTeachers = asyncHandler(async (req, res) => {
     }
 });
 
+export const getStudentsByTeacher = asyncHandler(async (req, res) => {
+    try {
+        const { id } = req.params;
+        console.log('teacher id is:', id)
+        const teacher = await User.findByPk(id, {
+            attributes: ["id", "firstname", "lastname", "email"],
+            include: [INCLUDES.students],
+        });
+
+        if (!teacher) {
+            return res.status(404).json({ success: false, message: "Teacher not found" });
+        }
+
+        res.status(200).json({ success: true, teacher, students: teacher.students });
+    } catch (error) {
+        console.error("Error fetching students:", error);
+        res.status(500).json({
+            success: false,
+            message: "An error occurred while fetching students",
+            error: error.message,
+        });
+    }
+});
+
 export const getStudents = asyncHandler(async (req, res) => {
     try {
         const roleName = "Student";
