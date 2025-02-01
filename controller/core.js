@@ -252,6 +252,7 @@ export const getUsers = asyncHandler(async(req, res) => {
     }    
 })
 
+
 export const createUser = asyncHandler(async (req, res) => {
     try {
         const { username, firstname, lastname, email, phone } = req.body;
