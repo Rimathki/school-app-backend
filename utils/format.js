@@ -24,17 +24,6 @@ export const formatQuery = (query) => {
         query_with_op[key] = { [Op[keys[0]]]: param };
       }
     }
-
-    // Object.keys(query[key]).forEach((op) => {
-    //   let param = query[key][op];
-    //   if (param.includes("%")) {
-    //     const decodedParam = param.slice(1, param.length - 1);
-    //     param = "%" + decodeURI(decodedParam) + "%";
-    //     query_with_op[key] = { [Op[op]]: param };
-    //   } else {
-    //     query_with_op[key] = { [Op[op]]: param };
-    //   }
-    // });
   });
   return query_with_op;
 };
