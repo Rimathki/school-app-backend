@@ -70,11 +70,35 @@ export const login = asyncHandler(async (req, res, next) => {
         }
 
         if (user.role.name === ROLE.teacher) {
-            includes.push(INCLUDES.lessons);
+            includes.push( {
+                association: 'lessons',
+                include: [
+                    {
+                        association: 'topic',
+                        attributes: ['id', 'title', 'description'],
+                    },
+                    {
+                        association: 'creator',
+                        attributes: ['id', 'lastname', 'firstname', 'email'],
+                    },
+                ],
+            },);
         } else if (user.role.name === ROLE.student) {
             includes.push({
                 ...INCLUDES.teachers,
-                include: [INCLUDES.lessons],
+                include:  {
+                    association: 'lessons',
+                    include: [
+                        {
+                            association: 'topic',
+                            attributes: ['id', 'title', 'description'],
+                        },
+                        {
+                            association: 'creator',
+                            attributes: ['id', 'lastname', 'firstname', 'email'],
+                        },
+                    ],
+                },
             });
             includes.push(INCLUDES.quizzes); 
         }
@@ -254,7 +278,7 @@ export const getUsers = asyncHandler(async(req, res) => {
 
 export const createUser = asyncHandler(async (req, res) => {
     try {
-        const { username, firstname, lastname, email, phone } = req.body;
+        const { username, firstname, lastname, email, phone, password, role_id } = req.body;
 
         const existingUser = await User.findOne({
             where: { [Op.or]: [{ email }, { username }] },
@@ -263,7 +287,7 @@ export const createUser = asyncHandler(async (req, res) => {
         if (existingUser) {
             throw ApiError.badRequest("Email or username is already registered");
         }
-
+        const hashedPassword = await bcrypt.hash(password, 10);
         const user = User.build({
             username: username,
             firstname: firstname,
@@ -271,6 +295,8 @@ export const createUser = asyncHandler(async (req, res) => {
             email: email,
             phone: phone,
             created_at: new Date(),
+            password: hashedPassword,
+            role_id: role_id,
             is_active: 1,
         });
 
@@ -489,9 +515,21 @@ export const getAllTeachers = asyncHandler(async (req, res) => {
             limit,
             include: [
                 roleInclude,
-                INCLUDES.lessons,
                 INCLUDES.students,
                 INCLUDES.teachers,
+                {
+                    association: 'lessons',
+                    include: [
+                        {
+                            association: 'topic',
+                            attributes: ['id', 'title', 'description'],
+                        },
+                        {
+                            association: 'creator',
+                            attributes: ['id', 'lastname', 'firstname', 'email'],
+                        },
+                    ],
+                },
             ],
         });
 
@@ -554,6 +592,85 @@ export const getStudentsByTeacher = asyncHandler(async (req, res) => {
         res.status(500).json({
             success: false,
             message: "An error occurred while fetching students",
+            error: error.message,
+        });
+    }
+});
+
+export const getAllStudents = asyncHandler(async (req, res) => {
+    try {
+        const roleName = "Teacher";
+        const select = req.query.select;
+        const sort = req.query.sort;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        let attributes = undefined;
+        let order = undefined;
+
+        if (select) {
+            attributes = select.split(" ");
+        } else {
+            attributes = USER_ATTRIBUTES;
+        }
+
+        if (sort) {
+            order = sort
+                .split(" ")
+                .map((el) => [
+                    el.charAt(0) === "-" ? el.substring(1) : el,
+                    el.charAt(0) === "-" ? "DESC" : "ASC",
+                ]);
+        } else {
+            order = [["created_at", "DESC"]];
+        }
+
+        ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
+
+        const query = formatQuery(req.query);
+
+        const roleInclude = {
+            ...INCLUDES.role,
+            where: { name: roleName },
+        };
+
+        const pagination = await paginate(User, page, limit, query);
+
+        const teachers = await User.findAll({
+            where: query,
+            order,
+            attributes,
+            offset: pagination.start - 1,
+            limit,
+            include: [
+                roleInclude,
+                INCLUDES.students,
+                INCLUDES.teachers,
+                {
+                    association: 'lessons',
+                    include: [
+                        {
+                            association: 'topic',
+                            attributes: ['id', 'title', 'description'],
+                        },
+                        {
+                            association: 'creator',
+                            attributes: ['id', 'lastname', 'firstname', 'email'],
+                        },
+                    ],
+                },
+            ],
+        });
+
+        res.status(200).json({
+            success: true,
+            teachers,
+            pagination,
+        });
+    } catch (error) {
+        console.error("Error fetching teachers:", error);
+        res.status(500).json({
+            success: false,
+            message: "An error occurred while fetching teachers",
             error: error.message,
         });
     }

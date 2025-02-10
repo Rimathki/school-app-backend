@@ -22,7 +22,8 @@ import {
     getQuizzes,
     saveQuiz,
     updateQuiz,
-    getAllQuizzes
+    getAllQuizzes,
+    getAllTopics
 } from "../controller/lesson.js";
 import { ROLE } from '../utils/params.js';
 
@@ -45,6 +46,9 @@ router.route("/lesson/:id")
 router.route("/lesson/:lessonId/topics")
     .get(authorize(notStudent), getTopics)
     .post(authorize([ROLE.admin]), createTopic);
+
+router.route("/topics")
+    .get(authorize(notStudent), getAllTopics)
 
 router.route("/topic/:id")
     .get(getTopic)

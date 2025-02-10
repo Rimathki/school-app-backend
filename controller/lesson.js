@@ -192,6 +192,26 @@ export const getTopics = expressAsyncHandler(async (req, res) => {
     }
 });
 
+export const getAllTopics = expressAsyncHandler(async (req, res) => {
+    try {
+        const topics = await Topic.findAll({
+            include: INCLUDES.lesson,
+        });
+
+        res.status(200).json({
+            success: true,
+            topics,
+        });
+    } catch (error) {
+        console.error("Error fetching topics:", error);
+        res.status(500).json({
+            success: false,
+            message: "An error occurred while fetching topics",
+            error: error.message,
+        });
+    }
+});
+
 export const getTopic = expressAsyncHandler(async (req, res) => {
     try {
         const { id } = req.params;

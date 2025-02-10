@@ -53,8 +53,8 @@ const INCLUDES = {
             },
         ],
     },
-    lessons: {
-        association: "lessons",
+    lesson: {
+        association: "lesson",
         attributes: LESSON_ATTRIBUTES,
         include: [
             {

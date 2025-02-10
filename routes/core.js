@@ -17,7 +17,8 @@ import {
     getStudents,
     addStudentToTeacher,
     removeStudentFromTeacher,
-    getStudentsByTeacher
+    getStudentsByTeacher,
+    getAllStudents
 } from '../controller/core.js';
 import { protect, authorize } from '../middleware/protect.js';
 import { ROLE } from '../utils/params.js'
@@ -50,6 +51,7 @@ router.post("/user-role", authorize(notStudent), saveUserRole);
 router.route('/teachers').get(authorize(ROLE.admin), getTeachers);
 router.route('/all-teachers').get(authorize(ROLE.admin), getAllTeachers);
 router.post('/user/change-password', changePassword);
+router.route('/all-students').get(authorize(ROLE.admin), getAllStudents);
 router.route("/students").get(authorize(notStudent), getStudents);
 router.route("/teachers/:id/students").get(authorize(notStudent), getStudentsByTeacher);
 router.route("/add-student-to-teacher").post(authorize(notStudent), addStudentToTeacher);
