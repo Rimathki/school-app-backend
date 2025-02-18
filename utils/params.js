@@ -4,6 +4,7 @@ const USER_ATTRIBUTES = [
     "lastname",
     "firstname",
     "email",
+    "role_id",
     "phone",
     "last_login",
     "login_ip",

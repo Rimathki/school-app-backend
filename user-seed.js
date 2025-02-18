@@ -1,5 +1,5 @@
 import { User, Role } from "./models/index.js";
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 
 export async function seedUser() {
     try {
@@ -12,7 +12,12 @@ export async function seedUser() {
         });
 
         const password = "admin123";
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await argon2.hash(password, {
+            type: argon2.argon2id,
+            memoryCost: 65536,
+            timeCost: 3,
+            parallelism: 4,
+        });
 
         const [adminUser, created] = await User.findOrCreate({
             where: { email: 'admin@gmail.com' },

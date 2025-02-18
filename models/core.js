@@ -1,6 +1,6 @@
 import { DataTypes, Op } from "sequelize";
 import sequelize from "./db.js";
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 import { TeacherStudents } from './index.js'
 
 const User = sequelize.define(
@@ -171,8 +171,14 @@ const RolePermission = sequelize.define('RolePermission', {
 
 User.beforeCreate(async (user, options) => {
     if (user?.password) {
+        console.log('Hashing password for user:', user.password);
         try {
-            const hashedPassword = await bcrypt.hash(user.password, 10);
+            const hashedPassword = await argon2.hash(user.password, {
+                type: argon2.argon2id,
+                memoryCost: 65536,
+                timeCost: 3,
+                parallelism: 4,
+            });
             user.password = hashedPassword;
         } catch (error) {
             console.error('Error hashing password with argon2:', error);

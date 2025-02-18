@@ -1,5 +1,5 @@
 import asyncHandler from 'express-async-handler';
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import { ApiError, handleError } from '../utils/customError.js';
 import { 
@@ -59,8 +59,7 @@ export const login = asyncHandler(async (req, res, next) => {
             throw ApiError.badRequest("You are an unregistered user or the username is incorrect.");
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-
+        const isPasswordValid = await argon2.verify(user.password, password);
         if (!isPasswordValid) {
             throw ApiError.badRequest("The password is incorrect.");
         }
@@ -288,7 +287,7 @@ export const createUser = asyncHandler(async (req, res) => {
         if (existingUser) {
             throw ApiError.badRequest("Email or username is already registered");
         }
-        const hashedPassword = await bcrypt.hash(password, 10);
+
         const user = User.build({
             username: username,
             firstname: firstname,
@@ -296,7 +295,7 @@ export const createUser = asyncHandler(async (req, res) => {
             email: email,
             phone: phone,
             created_at: new Date(),
-            password: hashedPassword,
+            password: password,
             role_id: role_id,
             is_active: 1,
         });
@@ -320,7 +319,8 @@ export const createUser = asyncHandler(async (req, res) => {
 export const updateUser = asyncHandler(async (req, res) => {
     try {
         const { id } = req.params;
-        const { username, firstname, lastname, email, phone, is_active } = req.body;
+        console.log('req body is:',req.body)
+        const { username, firstname, lastname, email, phone, role_id, password, is_active } = req.body;
         console.log('req param is:',req.params, 'req body is:',req.body)
         const user = await User.findByPk(id);
 
@@ -346,8 +346,17 @@ export const updateUser = asyncHandler(async (req, res) => {
         user.lastname = lastname || user.lastname;
         user.email = email || user.email;
         user.phone = phone || user.phone;
+        user.role_id = role_id || user.role_id;
         user.is_active = is_active !== undefined ? is_active : user.is_active;
-
+        if (password) {
+            const hashedPassword = await argon2.hash(password, {
+                type: argon2.argon2id,
+                memoryCost: 65536,
+                timeCost: 3,
+                parallelism: 4,
+            });
+            user.password = hashedPassword;
+        }
         await user.save();
 
         res.status(200).json({
@@ -396,10 +405,14 @@ export const changePassword = asyncHandler(async (req, res) => {
         if (!user) {
             throw ApiError.notFound("User not found.");
         }
-
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-
+        const hashedPassword = await argon2.hash(newPassword, {
+            type: argon2.argon2id,
+            memoryCost: 65536,
+            timeCost: 3,
+            parallelism: 4,
+        });
         user.password = hashedPassword;
+        console.log('user is:', user.password)
         await user.save();
 
         res.status(200).json({

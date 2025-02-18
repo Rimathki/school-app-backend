@@ -392,15 +392,14 @@ export const saveQuiz = expressAsyncHandler(async (req, res) => {
         const { duration, level, content } = req.body;
         const userId = req.userId;
 
-        // Find the topic
         const topic = await Topic.findByPk(topicId, {
             include: {
-                association: "lesson", // This refers to the Lesson associated with the Topic
+                association: "lesson",
                 include: {
-                    association: "teachers", // Get the teachers for the Lesson
+                    association: "teachers",
                     include: {
-                        association: "students", // Get the students of the teacher
-                        attributes: ["id"], // Fetch only the student IDs
+                        association: "students",
+                        attributes: ["id"],
                     },
                 },
             },
@@ -425,6 +424,8 @@ export const saveQuiz = expressAsyncHandler(async (req, res) => {
             student_id: studentId,
             quiz_id: quiz.id,
         }));
+
+        console.log("Student quizzes:", studentQuizEntries, students);
 
         try {
             await StudentQuizzes.bulkCreate(studentQuizEntries);
